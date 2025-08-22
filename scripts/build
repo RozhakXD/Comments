@@ -1,0 +1,48 @@
+import argparse
+import sys
+from pathlib import Path
+
+current_dir = Path(__file__).parent
+project_root = current_dir.parent
+src_path = project_root / "src"
+sys.path.insert(0, str(src_path))
+
+try:
+    from gopymagix.core.builder import GoPyMagixBuilder
+except ImportError as e:
+    print(f"GoPyMagix: [FATAL] Gagal mengimpor modul. Pastikan struktur direktori sudah benar.", file=sys.stderr)
+    print(f"GoPyMagix: [FATAL] Detail: {e}", file=sys.stderr)
+    sys.exit(1)
+
+def main():
+    """Fungsi utama untuk antarmuka baris perintah (CLI)."""
+    parser = argparse.ArgumentParser(
+        description="GoPyMagix: Mengamankan skrip Python dengan menanamkannya ke dalam biner Go.",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument("script_path", help="Path menuju skrip Python yang akan di-embed.")
+    parser.add_argument("--output-dir", "-o", default="dist", help="Direktori keluaran untuk hasil build (default: dist).")
+    parser.add_argument("--name", "-n", help="Nama untuk biner keluaran (default: nama skrip input).")
+    parser.add_argument("--py-version", default="3.13", help="Versi Python target untuk C-bindings, cth: '3.13'.")
+    parser.add_argument("--keep-source", action="store_true", help="Simpan file sumber Go (.go) yang dihasilkan.")
+    
+    args = parser.parse_args()
+
+    try:
+        builder = GoPyMagixBuilder(
+            script_path=args.script_path,
+            output_dir=args.output_dir,
+            output_name=args.name,
+            py_version=args.py_version,
+            keep_source=args.keep_source
+        )
+        builder.build()
+        print("\nGoPyMagix: Proses selesai dengan sukses!")
+
+    except (FileNotFoundError, RuntimeError) as e:
+        print(f"\nGoPyMagix: [FATAL] Proses build dihentikan.", file=sys.stderr)
+        print(f"GoPyMagix: [FATAL] Detail: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
